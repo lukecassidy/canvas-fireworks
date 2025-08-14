@@ -116,7 +116,7 @@ class Particle {
         }
 
         // Mark for removal if off screen
-        if (this.pos_y > canvas.height + 1 || this.pos_x < -1 || this.pos_x > canvas.width + 1) {
+        if (this.pos_y > canvas.height + 10 || this.pos_x < -10 || this.pos_x > canvas.width + 10) {
             this.remove = true;
         }
     }
