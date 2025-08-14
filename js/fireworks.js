@@ -87,30 +87,23 @@ function draw() {
 }
 
 // Represents a single moving point with basic physics and lifespan.
-const Particle = function (
-    x,
-    y,
-    vel_x,
-    vel_y,
-    acc_x,
-    acc_y,
-    life_span,
-    colour = 'red'
-) {
-    this.width = 3;
-    this.height = 3;
-    this.remove = false;
+class Particle {
+    constructor(x, y, vel_x, vel_y, acc_x, acc_y, life_span, colour = 'red') {
+        this.width = 3;
+        this.height = 3;
+        this.remove = false;
 
-    this.pos_x = x;
-    this.pos_y = y;
-    this.vel_x = vel_x;
-    this.vel_y = vel_y;
-    this.acc_x = acc_x;
-    this.acc_y = acc_y;
-    this.colour = colour;
-    this.life_span = life_span;
+        this.pos_x = x;
+        this.pos_y = y;
+        this.vel_x = vel_x;
+        this.vel_y = vel_y;
+        this.acc_x = acc_x;
+        this.acc_y = acc_y;
+        this.colour = colour;
+        this.life_span = life_span;
+    }
 
-    this.update = function () {
+    update() {
         this.vel_x += this.acc_x;
         this.vel_y += this.acc_y;
         this.pos_x += this.vel_x;
@@ -126,12 +119,12 @@ const Particle = function (
         if (this.pos_y > canvas.height + 1 || this.pos_x < -1 || this.pos_x > canvas.width + 1) {
             this.remove = true;
         }
-    };
+    }
 
-    this.draw = function () {
+    draw() {
         drawRect(this.pos_x, this.pos_y, this.width, this.height, this.colour);
-    };
-};
+    }
+}
 
 // Spawns a burst of particles that drift and fade.
 class Explosion {
