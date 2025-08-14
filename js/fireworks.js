@@ -134,55 +134,56 @@ const Particle = function (
 };
 
 // Spawns a burst of particles that drift and fade.
-const Explosion = function (x, y, colour) {
-    this.x = x;
-    this.y = y;
-    this.max_particles = 20;
-    this.particles = [];
-    this.life_span = random(30, 80);
-    this.primary_colour = colour;
+class Explosion {
+    constructor(x, y, colour) {
+        this.x = x;
+        this.y = y;
+        this.max_particles = 20;
+        this.particles = [];
+        this.life_span = random(30, 80);
+        this.primary_colour = colour;
 
-    // Create particles in a circular pattern
-    for (let i = this.max_particles; i--;) {
-        const angle = (i * Math.PI * 2) / this.max_particles;
-        const vel_x = Math.sin(angle);
-        const vel_y = Math.cos(angle);
-        const acc_x = 0;
-        const acc_y = GRAVITY;
+        // Create particles in a circular pattern
+        for (let i = this.max_particles; i--;) {
+            const angle = (i * Math.PI * 2) / this.max_particles;
+            const vel_x = Math.sin(angle);
+            const vel_y = Math.cos(angle);
+            const acc_x = 0;
+            const acc_y = GRAVITY;
 
-        // Alternate between primary and random colors
-        const colourForParticle = i % 3 ? this.primary_colour : getRandomColor();
+            // Alternate between primary and random colors
+            const colourForParticle = i % 3 ? this.primary_colour : getRandomColor();
 
-        this.particles.push(
-            new Particle(
-                this.x,
-                this.y,
-                vel_x,
-                vel_y,
-                acc_x,
-                acc_y,
-                random(this.life_span, this.life_span + 30),
-                colourForParticle
-            )
-        );
+            this.particles.push(
+                new Particle(
+                    this.x,
+                    this.y,
+                    vel_x,
+                    vel_y,
+                    acc_x,
+                    acc_y,
+                    random(this.life_span, this.life_span + 30),
+                    colourForParticle
+                )
+            );
+        }
     }
 
-    this.update = function () {
+    update() {
         for (let i = this.particles.length - 1; i >= 0; i--) {
             this.particles[i].update();
-
-            if (this.particles[i].remove === true) {
+            if (this.particles[i].remove) {
                 this.particles.splice(i, 1);
             }
         }
-    };
+    }
 
-    this.draw = function () {
+    draw() {
         for (let i = this.particles.length - 1; i >= 0; i--) {
             this.particles[i].draw();
         }
-    };
-};
+    }
+}
 
 // Polyfill for cross browser requestAnimationFrame support.
 window.requestAnimFrame = (function () {
