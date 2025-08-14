@@ -62,6 +62,11 @@ function update() {
     // Update explosions
     for (let i = explosions.length - 1; i >= 0; i--) {
         explosions[i].update();
+
+        // Remove finished explosions
+        if (explosions[i].particles.length === 0) {
+            explosions.splice(i, 1);
+        }
     }
 }
 
