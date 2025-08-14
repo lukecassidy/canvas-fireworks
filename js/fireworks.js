@@ -111,16 +111,21 @@ const Particle = function (
     this.life_span = life_span;
 
     this.update = function () {
-        this.life_span--;
-
-        if (this.life_span <= 0) {
-            this.remove = true;
-        }
-
         this.vel_x += this.acc_x;
         this.vel_y += this.acc_y;
         this.pos_x += this.vel_x;
         this.pos_y += this.vel_y;
+
+        // Mark for removal if life span is exceeded
+        this.life_span--;
+        if (this.life_span <= 0) {
+            this.remove = true;
+        }
+
+        // Mark for removal if off screen
+        if (this.pos_y > canvas.height + 1 || this.pos_x < -1 || this.pos_x > canvas.width + 1) {
+            this.remove = true;
+        }
     };
 
     this.draw = function () {
