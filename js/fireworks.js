@@ -1,14 +1,26 @@
 // Enable strict mode for cleaner, safer JavaScript.
 'use strict';
 
-const SPAWN_PROBABILITY = 0.025;    // Chance to spawn a rising particle per frame
-const TRAIL_ALPHA = 0.1;            // Trail fade speed
-const RISING_PARTICLE_SPEED_Y = -3; // Upward speed of rising particle
-const GRAVITY = 0.01;               // Downward acceleration for explosion particles
 
 let canvas, ctx;
 const explosions = [];  // Active explosions
 const particles = [];   // Rising particles
+
+// Centralised immutable object to make config changes a little easier.
+const CONFIG = Object.freeze({
+    SPAWN_PROBABILITY: 0.025,      // Chance to spawn rising particle per frame
+    TRAIL_ALPHA: 0.1,              // Trail fade speed of particles
+
+    // Explosions
+    EXP_GRAVITY: 0.01,             // Downward acceleration for explosion particles
+    EXP_PARTICLES_MAX: 20,         // Max particles per explosion
+    EXP_LIFE_RANGE: [30, 80],      // Lifespan of explosion particles
+
+    // Rising Particles
+    RISE_VEL_Y: -3,                // Upward speed of rising particle
+    RISE_VEL_X_RANGE: [-0.5, 0.5], // Random horizontal vel for rising
+    RISE_LIFE_RANGE: [40, 70],
+});
 
 window.addEventListener('load', init);
 
@@ -32,22 +44,22 @@ function animationLoop() {
 // Update the state of particles and explosions.
 function update() {
     // Randomly create a new rising particle
-    if (Math.random() < SPAWN_PROBABILITY) {
+    if (Math.random() < CONFIG.SPAWN_PROBABILITY) {
         particles.push(
             new Particle(
-                random(0, canvas.width),    // pos x
-                canvas.height + 1,          // pos y
-                random(-50, 50) / 100,      // vel x
-                RISING_PARTICLE_SPEED_Y,    // vel y
-                0,                          // acc x
-                0,                          // acc y
-                random(40, 70),             // life span
-                getRandomColor()
+                random(0, canvas.width),   // pos x
+                canvas.height + 1,         // pos y
+                random(CONFIG.RISE_VEL_X_RANGE[0], CONFIG.RISE_VEL_X_RANGE[1]), // vel x
+                CONFIG.RISE_VEL_Y,         // vel y
+                0,                         // acc x
+                0,                         // acc y
+                random(CONFIG.RISE_LIFE_RANGE[0], CONFIG.RISE_LIFE_RANGE[1]), // lifespan
+                getRandomColour()          // particle colour
             )
         );
     }
 
-    // Update particles - convert finished ones into explosions
+    // Update particles - convert finished ones into explosions.
     for (let i = particles.length - 1; i >= 0; i--) {
         particles[i].update();
 
@@ -59,11 +71,11 @@ function update() {
         }
     }
 
-    // Update explosions
+    // Update explosions.
     for (let i = explosions.length - 1; i >= 0; i--) {
         explosions[i].update();
 
-        // Remove finished explosions
+        // Remove finished explosions.
         if (explosions[i].particles.length === 0) {
             explosions.splice(i, 1);
         }
@@ -72,9 +84,8 @@ function update() {
 
 // Render the current frame.
 function draw() {
-    // Fade the canvas for trails (tweak alpha for longer/shorter trails)
-    ctx.fillStyle = `rgba(0,0,0,${TRAIL_ALPHA})`;
-    // ctx.fillStyle = `rgba(255,255,255,${TRAIL_ALPHA})`;
+    // Fade the canvas for trails (tweak alpha for longer/shorter trails).
+    ctx.fillStyle = `rgba(0,0,0,${CONFIG.TRAIL_ALPHA})`;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     for (let i = particles.length - 1; i >= 0; i--) {
@@ -88,7 +99,7 @@ function draw() {
 
 // Represents a single moving point with basic physics and lifespan.
 class Particle {
-    constructor(x, y, vel_x, vel_y, acc_x, acc_y, life_span, colour = 'red') {
+    constructor(x, y, vel_x, vel_y, acc_x, acc_y, life_span, colour) {
         this.width = 3;
         this.height = 3;
         this.remove = false;
@@ -109,13 +120,13 @@ class Particle {
         this.pos_x += this.vel_x;
         this.pos_y += this.vel_y;
 
-        // Mark for removal if life span is exceeded
+        // Mark for removal if life span is exceeded.
         this.life_span--;
         if (this.life_span <= 0) {
             this.remove = true;
         }
 
-        // Mark for removal if off screen
+        // Mark for removal if off screen.
         if (this.pos_y > canvas.height + 10 || this.pos_x < -10 || this.pos_x > canvas.width + 10) {
             this.remove = true;
         }
@@ -131,21 +142,21 @@ class Explosion {
     constructor(x, y, colour) {
         this.x = x;
         this.y = y;
-        this.max_particles = 20;
+        this.max_particles = CONFIG.EXP_PARTICLES_MAX;
         this.particles = [];
-        this.life_span = random(30, 80);
+        this.life_span = random(CONFIG.EXP_LIFE_RANGE[0], CONFIG.EXP_LIFE_RANGE[1]);
         this.primary_colour = colour;
 
-        // Create particles in a circular pattern
+        // Create particles in a circular pattern.
         for (let i = this.max_particles; i--;) {
             const angle = (i * Math.PI * 2) / this.max_particles;
             const vel_x = Math.sin(angle);
             const vel_y = Math.cos(angle);
             const acc_x = 0;
-            const acc_y = GRAVITY;
+            const acc_y = CONFIG.EXP_GRAVITY;
 
-            // Alternate between primary and random colors
-            const colourForParticle = i % 3 ? this.primary_colour : getRandomColor();
+            // Alternate between primary and random colours.
+            const colourForParticle = i % 3 ? this.primary_colour : getRandomColour();
 
             this.particles.push(
                 new Particle(
@@ -165,7 +176,7 @@ class Explosion {
     update() {
         for (let i = this.particles.length - 1; i >= 0; i--) {
             this.particles[i].update();
-            if (this.particles[i].remove) {
+            if (this.particles[i].remove === true) {
                 this.particles.splice(i, 1);
             }
         }
@@ -202,8 +213,8 @@ function drawRect(top_left_x, top_left_y, width, height, colour) {
     ctx.fillRect(top_left_x, top_left_y, width, height);
 }
 
-// Generate a random hex color string (e.g. #A1B2C3).
-function getRandomColor() {
+// Generate a random hex colour string (e.g. #A1B2C3).
+function getRandomColour() {
     const letters = '0123456789ABCDEF';
     let color = '#';
 
