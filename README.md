@@ -8,4 +8,8 @@ Open `index.html` in your browser.
 ## How It Works
 - Particles rise from random spots along the bottom of the canvas at varying speeds.
 - They eventually explode and burst into more particles.  
-- A transparent background fill creates the firework trail effect.  
+- A transparent background fill creates the firework trail effect.
+
+---
+
+![canvas-fireworks](https://github.com/user-attachments/assets/feb68b9d-c69a-4b5e-8506-0620710e1849)
