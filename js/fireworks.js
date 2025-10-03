@@ -11,6 +11,7 @@ const CONFIG = Object.freeze({
     CANVAS_ID: 'canvas-fireworks',
     SPAWN_PROBABILITY: 0.025, // Chance to spawn rising particle per frame
     TRAIL_ALPHA: 0.1,         // Trail fade speed of particles
+    SCREEN_BUFFER: 10,        // Extra space around edges before removing particles
     // Explosion particles
     EXPLOSION: {
         GRAVITY: 0.01,        // Downward acc for explosion particles
@@ -130,7 +131,9 @@ class Particle {
         }
 
         // Mark for removal if off screen.
-        if (this.posY > canvas.height + 10 || this.posX < -10 || this.posX > canvas.width + 10) {
+        if (this.posY > canvas.height + CONFIG.SCREEN_BUFFER
+            || this.posX < -CONFIG.SCREEN_BUFFER
+            || this.posX > canvas.width + CONFIG.SCREEN_BUFFER) {
             this.remove = true;
         }
     }
