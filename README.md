@@ -12,4 +12,4 @@ Open `canvas.html` in your browser.
 
 ---
 
-![canvas-fireworks](https://github.com/user-attachments/assets/feb68b9d-c69a-4b5e-8506-0620710e1849)
+![canvas-fireworks](https://github.com/user-attachments/assets/554ae13f-477e-4781-85b7-c5938df9883a)
