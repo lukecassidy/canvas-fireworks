@@ -195,19 +195,6 @@ class Explosion {
     }
 }
 
-// Polyfill for cross browser requestAnimationFrame support.
-window.requestAnimFrame = (function () {
-    return (
-        window.requestAnimationFrame ||
-        window.webkitRequestAnimationFrame ||
-        window.mozRequestAnimationFrame ||
-        function (callback) {
-            // Fallback to 30 FPS
-            window.setTimeout(callback, 1000 / 30);
-        }
-    );
-})();
-
 // Generate a random integer between start and finish.
 function random(start, finish) {
     return Math.floor(Math.random() * (finish - start + 1)) + start;
@@ -229,3 +216,16 @@ function getRandomColour() {
     }
     return color;
 }
+
+// Polyfill for cross browser requestAnimationFrame support.
+window.requestAnimFrame = (function () {
+    return (
+        window.requestAnimationFrame ||
+        window.webkitRequestAnimationFrame ||
+        window.mozRequestAnimationFrame ||
+        function (callback) {
+            // Fallback to 30 FPS
+            window.setTimeout(callback, 1000 / 30);
+        }
+    );
+})();
