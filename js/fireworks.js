@@ -8,6 +8,7 @@ const particles = [];   // Rising particles
 
 // Centralised immutable object to make config changes a little easier.
 const CONFIG = Object.freeze({
+    CANVAS_ID: 'canvas-fireworks',
     SPAWN_PROBABILITY: 0.025,      // Chance to spawn rising particle per frame
     TRAIL_ALPHA: 0.1,              // Trail fade speed of particles
 
@@ -25,9 +26,9 @@ const CONFIG = Object.freeze({
 window.addEventListener('load', init);
 
 function init() {
-    canvas = document.getElementById('canvas-fireworks');
+    canvas = document.getElementById(CONFIG.CANVAS_ID);
     if (!canvas) {
-        console.error('Canvas element with id="canvas-fireworks" not found.');
+        console.error(`Canvas element with id="${CONFIG.CANVAS_ID}" not found.`);
         return;
     }
     ctx = canvas.getContext('2d');
