@@ -9,18 +9,20 @@ const particles = [];   // Rising particles
 // Centralised immutable object to make config changes a little easier.
 const CONFIG = Object.freeze({
     CANVAS_ID: 'canvas-fireworks',
-    SPAWN_PROBABILITY: 0.025,      // Chance to spawn rising particle per frame
-    TRAIL_ALPHA: 0.1,              // Trail fade speed of particles
-
-    // Explosions
-    EXP_GRAVITY: 0.01,             // Downward acceleration for explosion particles
-    EXP_PARTICLES_MAX: 20,         // Max particles per explosion
-    EXP_LIFE_RANGE: [30, 80],      // Lifespan of explosion particles
-
-    // Rising Particles
-    RISE_VEL_Y: -3,                // Upward speed of rising particle
-    RISE_VEL_X_RANGE: [-0.5, 0.5], // Random horizontal vel for rising
-    RISE_LIFE_RANGE: [40, 70],
+    SPAWN_PROBABILITY: 0.025, // Chance to spawn rising particle per frame
+    TRAIL_ALPHA: 0.1,         // Trail fade speed of particles
+    // Explosion particles
+    EXPLOSION: {
+        GRAVITY: 0.01,        // Downward acc for explosion particles
+        PARTICLES_MAX: 20,    // Max particles per explosion
+        LIFE_RANGE: [30, 80]  // Lifespan of explosion particles
+    },
+    // Rising particles
+    RISE: {
+        VEL_Y: -3,                // Upward vel for rising particles
+        VEL_X_RANGE: [-0.5, 0.5], // Random horizontal vel for rising particles
+        LIFE_RANGE: [40, 70]      // Lifespan of rising particles
+    }
 });
 
 window.addEventListener('load', init);
@@ -50,11 +52,11 @@ function update() {
             new Particle(
                 random(0, canvas.width),   // pos x
                 canvas.height + 1,         // pos y
-                random(CONFIG.RISE_VEL_X_RANGE[0], CONFIG.RISE_VEL_X_RANGE[1]), // vel x
-                CONFIG.RISE_VEL_Y,         // vel y
+                random(CONFIG.RISE.VEL_X_RANGE[0], CONFIG.RISE.VEL_X_RANGE[1]), // vel x
+                CONFIG.RISE.VEL_Y,         // vel y
                 0,                         // acc x
                 0,                         // acc y
-                random(CONFIG.RISE_LIFE_RANGE[0], CONFIG.RISE_LIFE_RANGE[1]), // lifespan
+                random(CONFIG.RISE.LIFE_RANGE[0], CONFIG.RISE.LIFE_RANGE[1]), // lifespan
                 getRandomColour()          // particle colour
             )
         );
@@ -143,9 +145,9 @@ class Explosion {
     constructor(x, y, colour) {
         this.x = x;
         this.y = y;
-        this.maxParticles = CONFIG.EXP_PARTICLES_MAX;
+        this.maxParticles = CONFIG.EXPLOSION.PARTICLES_MAX;
         this.particles = [];
-        this.lifeSpan = random(CONFIG.EXP_LIFE_RANGE[0], CONFIG.EXP_LIFE_RANGE[1]);
+        this.lifeSpan = random(CONFIG.EXPLOSION.LIFE_RANGE[0], CONFIG.EXPLOSION.LIFE_RANGE[1]);
         this.primaryColour = colour;
 
         // Create particles in a circular pattern.
@@ -154,7 +156,7 @@ class Explosion {
             const velX = Math.sin(angle);
             const velY = Math.cos(angle);
             const accX = 0;
-            const accY = CONFIG.EXP_GRAVITY;
+            const accY = CONFIG.EXPLOSION.GRAVITY;
 
             // Alternate between primary and random colours.
             const colourForParticle = i % 3 ? this.primaryColour : getRandomColour();
