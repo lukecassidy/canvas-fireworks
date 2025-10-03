@@ -66,7 +66,7 @@ function update() {
 
         if (particles[i].remove === true) {
             explosions.push(
-                new Explosion(particles[i].pos_x, particles[i].pos_y, particles[i].colour)
+                new Explosion(particles[i].posX, particles[i].posY, particles[i].colour)
             );
             particles.splice(i, 1);
         }
@@ -100,41 +100,41 @@ function draw() {
 
 // Represents a single moving point with basic physics and lifespan.
 class Particle {
-    constructor(x, y, vel_x, vel_y, acc_x, acc_y, life_span, colour) {
+    constructor(x, y, velX, velY, accX, accY, lifeSpan, colour) {
         this.width = 3;
         this.height = 3;
         this.remove = false;
 
-        this.pos_x = x;
-        this.pos_y = y;
-        this.vel_x = vel_x;
-        this.vel_y = vel_y;
-        this.acc_x = acc_x;
-        this.acc_y = acc_y;
+        this.posX = x;
+        this.posY = y;
+        this.velX = velX;
+        this.velY = velY;
+        this.accX = accX;
+        this.accY = accY;
         this.colour = colour;
-        this.life_span = life_span;
+        this.lifeSpan = lifeSpan;
     }
 
     update() {
-        this.vel_x += this.acc_x;
-        this.vel_y += this.acc_y;
-        this.pos_x += this.vel_x;
-        this.pos_y += this.vel_y;
+        this.velX += this.accX;
+        this.velY += this.accY;
+        this.posX += this.velX;
+        this.posY += this.velY;
 
         // Mark for removal if life span is exceeded.
-        this.life_span--;
-        if (this.life_span <= 0) {
+        this.lifeSpan--;
+        if (this.lifeSpan <= 0) {
             this.remove = true;
         }
 
         // Mark for removal if off screen.
-        if (this.pos_y > canvas.height + 10 || this.pos_x < -10 || this.pos_x > canvas.width + 10) {
+        if (this.posY > canvas.height + 10 || this.posX < -10 || this.posX > canvas.width + 10) {
             this.remove = true;
         }
     }
 
     draw() {
-        drawRect(this.pos_x, this.pos_y, this.width, this.height, this.colour);
+        drawRect(this.posX, this.posY, this.width, this.height, this.colour);
     }
 }
 
@@ -143,31 +143,31 @@ class Explosion {
     constructor(x, y, colour) {
         this.x = x;
         this.y = y;
-        this.max_particles = CONFIG.EXP_PARTICLES_MAX;
+        this.maxParticles = CONFIG.EXP_PARTICLES_MAX;
         this.particles = [];
-        this.life_span = random(CONFIG.EXP_LIFE_RANGE[0], CONFIG.EXP_LIFE_RANGE[1]);
-        this.primary_colour = colour;
+        this.lifeSpan = random(CONFIG.EXP_LIFE_RANGE[0], CONFIG.EXP_LIFE_RANGE[1]);
+        this.primaryColour = colour;
 
         // Create particles in a circular pattern.
-        for (let i = this.max_particles; i--;) {
-            const angle = (i * Math.PI * 2) / this.max_particles;
-            const vel_x = Math.sin(angle);
-            const vel_y = Math.cos(angle);
-            const acc_x = 0;
-            const acc_y = CONFIG.EXP_GRAVITY;
+        for (let i = this.maxParticles; i--;) {
+            const angle = (i * Math.PI * 2) / this.maxParticles;
+            const velX = Math.sin(angle);
+            const velY = Math.cos(angle);
+            const accX = 0;
+            const accY = CONFIG.EXP_GRAVITY;
 
             // Alternate between primary and random colours.
-            const colourForParticle = i % 3 ? this.primary_colour : getRandomColour();
+            const colourForParticle = i % 3 ? this.primaryColour : getRandomColour();
 
             this.particles.push(
                 new Particle(
                     this.x,
                     this.y,
-                    vel_x,
-                    vel_y,
-                    acc_x,
-                    acc_y,
-                    random(this.life_span, this.life_span + 30),
+                    velX,
+                    velY,
+                    accX,
+                    accY,
+                    random(this.lifeSpan, this.lifeSpan + 30),
                     colourForParticle
                 )
             );
