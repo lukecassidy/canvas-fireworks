@@ -10,7 +10,6 @@ const particles = [];   // Rising particles
 const CONFIG = Object.freeze({
     CANVAS_ID: 'canvas-fireworks',
     SPAWN_PROBABILITY: 0.025, // Chance to spawn rising particle per frame
-    TRAIL_ALPHA: 0.1,         // Trail fade speed of particles
     SCREEN_BUFFER: 10,        // Extra space around edges before removing particles
     // Explosion particles
     EXPLOSION: {
@@ -23,6 +22,9 @@ const CONFIG = Object.freeze({
         VEL_Y: -3,                // Upward vel for rising particles
         VEL_X_RANGE: [-0.5, 0.5], // Random horizontal vel for rising particles
         LIFE_RANGE: [40, 70]      // Lifespan of rising particles
+    },
+    COLOUR: {
+        BACKGROUND: 'rgba(0,0,0,0.1)' // The alpha is used here to control the fade speed of particles
     }
 });
 
@@ -88,8 +90,8 @@ function update() {
 
 // Render the current frame.
 function draw() {
-    // Fade the canvas for trails (tweak alpha for longer/shorter trails).
-    ctx.fillStyle = `rgba(0,0,0,${CONFIG.TRAIL_ALPHA})`;
+    // Fade the canvas for trails
+    ctx.fillStyle = CONFIG.COLOUR.BACKGROUND;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     for (let i = particles.length - 1; i >= 0; i--) {
