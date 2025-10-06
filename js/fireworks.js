@@ -2,14 +2,6 @@
 'use strict';
 
 
-let canvas, ctx;
-const explosions = [];  // Active explosions
-const particles = [];   // Rising particles
-
-// Using our own timing to control update speed.
-let previousTimestamp = 0; // Timestamp of the previous frame
-let timeSinceLastStep = 0; // Time in ms since last update
-
 // Centralised immutable object to make config changes a little easier.
 const CONFIG = Object.freeze({
     CANVAS_ID: 'canvas-fireworks',
@@ -33,83 +25,14 @@ const CONFIG = Object.freeze({
     }
 });
 
-window.addEventListener('load', init);
-
-function init() {
-    canvas = document.getElementById(CONFIG.CANVAS_ID);
-    if (!canvas) {
-        console.error(`Canvas element with id="${CONFIG.CANVAS_ID}" not found.`);
-        return;
-    }
-    ctx = canvas.getContext('2d');
-    requestAnimFrame(animationLoop);
-}
-
-// Update the state of particles and explosions.
-function update() {
-    // Randomly create a new rising particle
-    if (Math.random() < CONFIG.SPAWN_PROBABILITY) {
-        particles.push(
-            new Particle(
-                Helper.random(0, canvas.width), // pos x
-                canvas.height + 1,              // pos y
-                Helper.random(
-                    CONFIG.RISE.VEL_X_RANGE[0],
-                    CONFIG.RISE.VEL_X_RANGE[1]
-                ),                              // vel x
-                CONFIG.RISE.VEL_Y,              // vel y
-                0,                              // acc x
-                0,                              // acc y
-                Helper.random(
-                    CONFIG.RISE.LIFE_RANGE[0],
-                    CONFIG.RISE.LIFE_RANGE[1]
-                ),                              // lifespan
-                Helper.getRandomColour()        // particle colour
-            )
-        );
-    }
-
-    // Update particles - convert finished ones into explosions.
-    for (let i = particles.length - 1; i >= 0; i--) {
-        particles[i].update();
-
-        if (particles[i].remove === true) {
-            explosions.push(
-                new Explosion(particles[i].posX, particles[i].posY, particles[i].colour)
-            );
-            particles.splice(i, 1);
-        }
-    }
-
-    // Update explosions.
-    for (let i = explosions.length - 1; i >= 0; i--) {
-        explosions[i].update();
-
-        // Remove finished explosions.
-        if (explosions[i].particles.length === 0) {
-            explosions.splice(i, 1);
-        }
-    }
-}
-
-// Render the current frame.
-function draw() {
-    // Fade the canvas for trails (alpha on background colour).
-    ctx.fillStyle = CONFIG.COLOURS.BACKGROUND;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    for (let i = particles.length - 1; i >= 0; i--) {
-        particles[i].draw();
-    }
-
-    for (let i = explosions.length - 1; i >= 0; i--) {
-        explosions[i].draw();
-    }
-}
+// ---------------------------------------------------------------------------
 
 // Represents a single moving point with basic physics and lifespan.
 class Particle {
-    constructor(x, y, velX, velY, accX, accY, lifeSpan, colour) {
+    constructor(x, y, velX, velY, accX, accY, lifeSpan, colour, ctx, canvas) {
+        this.ctx = ctx;
+        this.canvas = canvas;
+
         this.width = 3;
         this.height = 3;
         this.remove = false;
@@ -137,26 +60,35 @@ class Particle {
         }
 
         // Mark for removal if off screen.
-        if (this.posY > canvas.height + CONFIG.SCREEN_BUFFER
-            || this.posX < -CONFIG.SCREEN_BUFFER
-            || this.posX > canvas.width + CONFIG.SCREEN_BUFFER) {
+        if (this.posY > this.canvas.height + CONFIG.SCREEN_BUFFER ||
+            this.posX < -CONFIG.SCREEN_BUFFER ||
+            this.posX > this.canvas.width + CONFIG.SCREEN_BUFFER
+        ) {
             this.remove = true;
         }
     }
 
     draw() {
-        Helper.drawRect(this.posX, this.posY, this.width, this.height, this.colour);
+        this.ctx.fillStyle = this.colour;
+        this.ctx.fillRect(this.posX, this.posY, this.width, this.height);
     }
 }
 
+// ---------------------------------------------------------------------------
+
 // Spawns a burst of particles that drift and fade.
 class Explosion {
-    constructor(x, y, colour) {
+    constructor(x, y, colour, ctx, canvas) {
+        this.ctx = ctx;
+        this.canvas = canvas;
         this.x = x;
         this.y = y;
         this.maxParticles = CONFIG.EXPLOSION.PARTICLES_MAX;
         this.particles = [];
-        this.lifeSpan = Helper.random(CONFIG.EXPLOSION.LIFE_RANGE[0], CONFIG.EXPLOSION.LIFE_RANGE[1]);
+        this.lifeSpan = Helper.random(
+            CONFIG.EXPLOSION.LIFE_RANGE[0],
+            CONFIG.EXPLOSION.LIFE_RANGE[1]
+        );
         this.primaryColour = colour;
 
         // Create particles in a circular pattern.
@@ -166,7 +98,7 @@ class Explosion {
             const velY = Math.cos(angle);
             const accX = 0;
             const accY = CONFIG.EXPLOSION.GRAVITY;
-
+            const lifeSpan = Helper.random(this.lifeSpan, this.lifeSpan + 30);
             // Alternate between primary and random colours.
             const colourForParticle = i % 3 ? this.primaryColour : Helper.getRandomColour();
 
@@ -178,8 +110,10 @@ class Explosion {
                     velY,
                     accX,
                     accY,
-                    Helper.random(this.lifeSpan, this.lifeSpan + 30),
-                    colourForParticle
+                    lifeSpan,
+                    colourForParticle,
+                    this.ctx,
+                    this.canvas
                 )
             );
         }
@@ -188,36 +122,141 @@ class Explosion {
     update() {
         for (let i = this.particles.length - 1; i >= 0; i--) {
             this.particles[i].update();
-            if (this.particles[i].remove === true) {
+
+            // Remove finished particles.
+            if (this.particles[i].remove) {
                 this.particles.splice(i, 1);
             }
         }
     }
 
     draw() {
-        for (let i = this.particles.length - 1; i >= 0; i--) {
-            this.particles[i].draw();
+        for (const particle of this.particles) {
+            particle.draw();
         }
     }
 }
 
+// ---------------------------------------------------------------------------
+
+// Manages all active fireworks particles and explosions.
+class FireworksSystem {
+    constructor(ctx, canvas) {
+        this.ctx = ctx;
+        this.canvas = canvas;
+        this.particles = [];
+        this.explosions = [];
+    }
+
+    update() {
+        // Randomly create a new rising particle
+        if (Math.random() < CONFIG.SPAWN_PROBABILITY) {
+            this.particles.push(
+                new Particle(
+                    Helper.random(0, this.canvas.width), // pos x
+                    this.canvas.height + 1,              // pos y
+                    Helper.random(
+                        CONFIG.RISE.VEL_X_RANGE[0],
+                        CONFIG.RISE.VEL_X_RANGE[1]
+                    ),                                  // vel x
+                    CONFIG.RISE.VEL_Y,                  // vel y
+                    0,                                  // acc x
+                    0,                                  // acc y
+                    Helper.random(
+                        CONFIG.RISE.LIFE_RANGE[0],
+                        CONFIG.RISE.LIFE_RANGE[1]
+                    ),                                  // lifespan
+                    Helper.getRandomColour(),           // colour
+                    this.ctx,
+                    this.canvas
+                )
+            );
+        }
+
+        // Update particles - convert finished ones into explosions.
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            this.particles[i].update();
+
+            if (this.particles[i].remove) {
+                this.explosions.push(
+                    new Explosion(
+                        this.particles[i].posX,
+                        this.particles[i].posY,
+                        this.particles[i].colour,
+                        this.ctx,
+                        this.canvas
+                    )
+                );
+                this.particles.splice(i, 1);
+            }
+        }
+
+        // Update explosions.
+        for (let i = this.explosions.length - 1; i >= 0; i--) {
+            this.explosions[i].update();
+            if (this.explosions[i].particles.length === 0) {
+                this.explosions.splice(i, 1);
+            }
+        }
+    }
+
+    draw() {
+        // Fade the canvas for trails (alpha on background colour).
+        this.ctx.fillStyle = CONFIG.COLOURS.BACKGROUND;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        for (const particle of this.particles) {
+            particle.draw();
+        }
+
+        for (const explosion of this.explosions) {
+            explosion.draw();
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+
+// Animation runner that manages time-based updates.
+class AnimationRunner {
+    constructor(effect, timeStep) {
+        this.effect = effect;
+        this.timeStep = timeStep;
+        this.previousTimestamp = 0;
+        this.timeSinceLastStep = 0;
+        this.loop = this.loop.bind(this);
+    }
+
+    start() {
+        requestAnimFrame(this.loop);
+    }
+
+    loop(currentTimestamp) {
+        const timeDelta = currentTimestamp - this.previousTimestamp;
+        this.previousTimestamp = currentTimestamp;
+        this.timeSinceLastStep += timeDelta;
+
+        if (this.timeSinceLastStep > this.timeStep) {
+            this.timeSinceLastStep = 0;
+            this.effect.update();
+            this.effect.draw();
+        }
+
+        requestAnimFrame(this.loop);
+    }
+}
+
+// ---------------------------------------------------------------------------
+
+// Helper functions.
 class Helper {
-    // Generate a random integer between start and finish.
     static random(start, finish) {
         return Math.floor(Math.random() * (finish - start + 1)) + start;
     }
 
-    // Draw a filled rectangle at the given position and size.
-    static drawRect(top_left_x, top_left_y, width, height, colour) {
-        ctx.fillStyle = colour;
-        ctx.fillRect(top_left_x, top_left_y, width, height);
-    }
-
-    // Generate a random hex colour string (e.g. #A1B2C3).
     static getRandomColour() {
         const letters = '0123456789ABCDEF';
         let color = '#';
-
         for (let i = 0; i < 6; i++) {
             color += letters[Math.floor(Math.random() * 16)];
         }
@@ -225,21 +264,18 @@ class Helper {
     }
 }
 
-// Main loop where we update state, draw, schedule next frame.
-function animationLoop(currentTimestamp) {
-    const timeDelta = currentTimestamp - previousTimestamp;
-    previousTimestamp = currentTimestamp;
-    timeSinceLastStep += timeDelta;
-
-    // Update and draw only if enough time has passed.
-    if (timeSinceLastStep > CONFIG.TIME_STEP) {
-        timeSinceLastStep = 0;
-        update();
-        draw();
+//  Initialise the fireworks system when the window loads.
+window.addEventListener('load', () => {
+    const canvas = document.getElementById(CONFIG.CANVAS_ID);
+    if (!canvas) {
+        console.error(`Canvas element with id="${CONFIG.CANVAS_ID}" not found.`);
+        return;
     }
 
-    requestAnimFrame(animationLoop);
-}
+    const ctx = canvas.getContext('2d');
+    const fireworksSystem = new FireworksSystem(ctx, canvas);
+    new AnimationRunner(fireworksSystem, CONFIG.TIME_STEP).start();
+});
 
 // Polyfill for cross browser requestAnimationFrame support.
 window.requestAnimFrame = (function () {
