@@ -28,7 +28,7 @@ const CONFIG = Object.freeze({
         VEL_X_RANGE: [-0.5, 0.5], // Random horizontal vel for rising particles
         LIFE_RANGE: [40, 70]      // Lifespan of rising particles
     },
-    COLOUR: {
+    COLOURS: {
         BACKGROUND: 'rgba(0,0,0,0.1)' // The alpha is used here to control the fade speed of particles
     }
 });
@@ -51,14 +51,20 @@ function update() {
     if (Math.random() < CONFIG.SPAWN_PROBABILITY) {
         particles.push(
             new Particle(
-                random(0, canvas.width),   // pos x
-                canvas.height + 1,         // pos y
-                random(CONFIG.RISE.VEL_X_RANGE[0], CONFIG.RISE.VEL_X_RANGE[1]), // vel x
-                CONFIG.RISE.VEL_Y,         // vel y
-                0,                         // acc x
-                0,                         // acc y
-                random(CONFIG.RISE.LIFE_RANGE[0], CONFIG.RISE.LIFE_RANGE[1]), // lifespan
-                getRandomColour()          // particle colour
+                Helper.random(0, canvas.width), // pos x
+                canvas.height + 1,              // pos y
+                Helper.random(
+                    CONFIG.RISE.VEL_X_RANGE[0],
+                    CONFIG.RISE.VEL_X_RANGE[1]
+                ),                              // vel x
+                CONFIG.RISE.VEL_Y,              // vel y
+                0,                              // acc x
+                0,                              // acc y
+                Helper.random(
+                    CONFIG.RISE.LIFE_RANGE[0],
+                    CONFIG.RISE.LIFE_RANGE[1]
+                ),                              // lifespan
+                Helper.getRandomColour()        // particle colour
             )
         );
     }
@@ -88,8 +94,8 @@ function update() {
 
 // Render the current frame.
 function draw() {
-    // Fade the canvas for trails
-    ctx.fillStyle = CONFIG.COLOUR.BACKGROUND;
+    // Fade the canvas for trails (alpha on background colour).
+    ctx.fillStyle = CONFIG.COLOURS.BACKGROUND;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     for (let i = particles.length - 1; i >= 0; i--) {
@@ -139,7 +145,7 @@ class Particle {
     }
 
     draw() {
-        drawRect(this.posX, this.posY, this.width, this.height, this.colour);
+        Helper.drawRect(this.posX, this.posY, this.width, this.height, this.colour);
     }
 }
 
@@ -150,7 +156,7 @@ class Explosion {
         this.y = y;
         this.maxParticles = CONFIG.EXPLOSION.PARTICLES_MAX;
         this.particles = [];
-        this.lifeSpan = random(CONFIG.EXPLOSION.LIFE_RANGE[0], CONFIG.EXPLOSION.LIFE_RANGE[1]);
+        this.lifeSpan = Helper.random(CONFIG.EXPLOSION.LIFE_RANGE[0], CONFIG.EXPLOSION.LIFE_RANGE[1]);
         this.primaryColour = colour;
 
         // Create particles in a circular pattern.
@@ -162,7 +168,7 @@ class Explosion {
             const accY = CONFIG.EXPLOSION.GRAVITY;
 
             // Alternate between primary and random colours.
-            const colourForParticle = i % 3 ? this.primaryColour : getRandomColour();
+            const colourForParticle = i % 3 ? this.primaryColour : Helper.getRandomColour();
 
             this.particles.push(
                 new Particle(
@@ -172,7 +178,7 @@ class Explosion {
                     velY,
                     accX,
                     accY,
-                    random(this.lifeSpan, this.lifeSpan + 30),
+                    Helper.random(this.lifeSpan, this.lifeSpan + 30),
                     colourForParticle
                 )
             );
@@ -195,26 +201,28 @@ class Explosion {
     }
 }
 
-// Generate a random integer between start and finish.
-function random(start, finish) {
-    return Math.floor(Math.random() * (finish - start + 1)) + start;
-}
-
-// Draw a filled rectangle at the given position and size.
-function drawRect(top_left_x, top_left_y, width, height, colour) {
-    ctx.fillStyle = colour;
-    ctx.fillRect(top_left_x, top_left_y, width, height);
-}
-
-// Generate a random hex colour string (e.g. #A1B2C3).
-function getRandomColour() {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-
-    for (let i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
+class Helper {
+    // Generate a random integer between start and finish.
+    static random(start, finish) {
+        return Math.floor(Math.random() * (finish - start + 1)) + start;
     }
-    return color;
+
+    // Draw a filled rectangle at the given position and size.
+    static drawRect(top_left_x, top_left_y, width, height, colour) {
+        ctx.fillStyle = colour;
+        ctx.fillRect(top_left_x, top_left_y, width, height);
+    }
+
+    // Generate a random hex colour string (e.g. #A1B2C3).
+    static getRandomColour() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
 }
 
 // Main loop where we update state, draw, schedule next frame.
