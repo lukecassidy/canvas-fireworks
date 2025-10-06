@@ -45,22 +45,6 @@ function init() {
     requestAnimFrame(animationLoop);
 }
 
-// Main loop where we update state, draw, schedule next frame.
-function animationLoop(currentTimestamp) {
-    const timeDelta = currentTimestamp - previousTimestamp;
-    previousTimestamp = currentTimestamp;
-    timeSinceLastStep += timeDelta;
-
-    // Update and draw only if enough time has passed.
-    if (timeSinceLastStep > CONFIG.TIME_STEP) {
-        timeSinceLastStep = 0;
-        update();
-        draw();
-    }
-
-    requestAnimFrame(animationLoop);
-}
-
 // Update the state of particles and explosions.
 function update() {
     // Randomly create a new rising particle
@@ -231,6 +215,22 @@ function getRandomColour() {
         color += letters[Math.floor(Math.random() * 16)];
     }
     return color;
+}
+
+// Main loop where we update state, draw, schedule next frame.
+function animationLoop(currentTimestamp) {
+    const timeDelta = currentTimestamp - previousTimestamp;
+    previousTimestamp = currentTimestamp;
+    timeSinceLastStep += timeDelta;
+
+    // Update and draw only if enough time has passed.
+    if (timeSinceLastStep > CONFIG.TIME_STEP) {
+        timeSinceLastStep = 0;
+        update();
+        draw();
+    }
+
+    requestAnimFrame(animationLoop);
 }
 
 // Polyfill for cross browser requestAnimationFrame support.
