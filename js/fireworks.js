@@ -6,11 +6,16 @@ let canvas, ctx;
 const explosions = [];  // Active explosions
 const particles = [];   // Rising particles
 
+// Using our own timing to control update speed.
+let previousTimestamp = 0; // Timestamp of the previous frame
+let timeSinceLastStep = 0; // Time in ms since last update
+
 // Centralised immutable object to make config changes a little easier.
 const CONFIG = Object.freeze({
     CANVAS_ID: 'canvas-fireworks',
     SPAWN_PROBABILITY: 0.025, // Chance to spawn rising particle per frame
     SCREEN_BUFFER: 10,        // Extra space around edges before removing particles
+    TIME_STEP: 8,             // Time in ms between updates
     // Explosion particles
     EXPLOSION: {
         GRAVITY: 0.01,        // Downward acc for explosion particles
@@ -37,13 +42,22 @@ function init() {
         return;
     }
     ctx = canvas.getContext('2d');
-    animationLoop();
+    requestAnimFrame(animationLoop);
 }
 
 // Main loop where we update state, draw, schedule next frame.
-function animationLoop() {
-    update();
-    draw();
+function animationLoop(currentTimestamp) {
+    const timeDelta = currentTimestamp - previousTimestamp;
+    previousTimestamp = currentTimestamp;
+    timeSinceLastStep += timeDelta;
+
+    // Update and draw only if enough time has passed.
+    if (timeSinceLastStep > CONFIG.TIME_STEP) {
+        timeSinceLastStep = 0;
+        update();
+        draw();
+    }
+
     requestAnimFrame(animationLoop);
 }
 
