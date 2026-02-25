@@ -271,11 +271,11 @@ class Helper {
 
     static getRandomColour() {
         const letters = '0123456789ABCDEF';
-        let color = '#';
+        let colour = '#';
         for (let i = 0; i < 6; i++) {
-            color += letters[Math.floor(Math.random() * 16)];
+            colour += letters[Math.floor(Math.random() * 16)];
         }
-        return color;
+        return colour;
     }
 }
 
