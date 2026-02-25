@@ -1,7 +1,11 @@
 // Enable strict mode for cleaner, safer JavaScript.
 'use strict';
 
+// ---------------------------------------------------------------------------
+// CONFIG
 // Centralised immutable object to make config changes a little easier.
+// ---------------------------------------------------------------------------
+
 const CONFIG = Object.freeze({
     CANVAS_ID: 'canvas-fireworks',
     SPAWN_PROBABILITY: 0.025, // Chance to spawn rising particle per frame
@@ -10,7 +14,7 @@ const CONFIG = Object.freeze({
     // Explosion particles
     EXPLOSION: {
         GRAVITY: 0.01,        // Downward acc for explosion particles
-        PARTICLES_MAX: 20,    // Max particles per explosion
+        MAX_PARTICLES: 20,    // Max particles per explosion
         LIFE_RANGE: [30, 80]  // Lifespan of explosion particles
     },
     // Rising particles
@@ -25,8 +29,10 @@ const CONFIG = Object.freeze({
 });
 
 // ---------------------------------------------------------------------------
-
+// ENTITY
 // Represents a single moving point with basic physics and lifespan.
+// ---------------------------------------------------------------------------
+
 class Particle {
     constructor(x, y, velX, velY, accX, accY, lifeSpan, colour, ctx, canvas) {
         this.ctx = ctx;
@@ -34,7 +40,7 @@ class Particle {
 
         this.width = 3;
         this.height = 3;
-        this.remove = false;
+        this.isDead = false;
 
         this.posX = x;
         this.posY = y;
@@ -55,7 +61,7 @@ class Particle {
         // Mark for removal if life span is exceeded.
         this.lifeSpan--;
         if (this.lifeSpan <= 0) {
-            this.remove = true;
+            this.isDead = true;
         }
 
         // Mark for removal if off screen.
@@ -63,7 +69,7 @@ class Particle {
             this.posX < -CONFIG.SCREEN_BUFFER ||
             this.posX > this.canvas.width + CONFIG.SCREEN_BUFFER
         ) {
-            this.remove = true;
+            this.isDead = true;
         }
     }
 
@@ -74,15 +80,17 @@ class Particle {
 }
 
 // ---------------------------------------------------------------------------
-
+// EXPLOSION
 // Spawns a burst of particles that drift and fade.
+// ---------------------------------------------------------------------------
+
 class Explosion {
     constructor(x, y, colour, ctx, canvas) {
         this.ctx = ctx;
         this.canvas = canvas;
         this.x = x;
         this.y = y;
-        this.maxParticles = CONFIG.EXPLOSION.PARTICLES_MAX;
+        this.maxParticles = CONFIG.EXPLOSION.MAX_PARTICLES;
         this.particles = [];
         this.lifeSpan = Helper.random(
             CONFIG.EXPLOSION.LIFE_RANGE[0],
@@ -99,7 +107,7 @@ class Explosion {
             const accY = CONFIG.EXPLOSION.GRAVITY;
             const lifeSpan = Helper.random(this.lifeSpan, this.lifeSpan + 30);
             // Alternate between primary and random colours.
-            const colourForParticle = i % 3 ? this.primaryColour : Helper.getRandomColour();
+            const colour = i % 3 ? this.primaryColour : Helper.getRandomColour();
 
             this.particles.push(
                 new Particle(
@@ -110,7 +118,7 @@ class Explosion {
                     accX,
                     accY,
                     lifeSpan,
-                    colourForParticle,
+                    colour,
                     this.ctx,
                     this.canvas
                 )
@@ -123,7 +131,7 @@ class Explosion {
             this.particles[i].update();
 
             // Remove finished particles.
-            if (this.particles[i].remove) {
+            if (this.particles[i].isDead) {
                 this.particles.splice(i, 1);
             }
         }
@@ -137,9 +145,11 @@ class Explosion {
 }
 
 // ---------------------------------------------------------------------------
-
+// SCENE
 // Manages all active fireworks particles and explosions.
-class FireworksSystem {
+// ---------------------------------------------------------------------------
+
+class FireworksScene {
     constructor(ctx, canvas) {
         this.ctx = ctx;
         this.canvas = canvas;
@@ -176,7 +186,7 @@ class FireworksSystem {
         for (let i = this.particles.length - 1; i >= 0; i--) {
             this.particles[i].update();
 
-            if (this.particles[i].remove) {
+            if (this.particles[i].isDead) {
                 this.explosions.push(
                     new Explosion(
                         this.particles[i].posX,
@@ -215,40 +225,45 @@ class FireworksSystem {
 }
 
 // ---------------------------------------------------------------------------
+// LOOP
+// Drives the fixed-timestep loop — no need to modify this.
+// Pass any Scene with update() and draw() methods.
+// ---------------------------------------------------------------------------
 
-// Animation runner that manages time-based updates.
-class AnimationRunner {
-    constructor(effect, timeStep) {
-        this.effect = effect;
+class Loop {
+    constructor(scene, timeStep) {
+        this.scene = scene;
         this.timeStep = timeStep;
-        this.previousTimestamp = 0;
-        this.timeSinceLastStep = 0;
-        this.loop = this.loop.bind(this);
+        this.lastTime = 0;
+        this.accumulator = 0;
+        this.tick = this.tick.bind(this);
     }
 
     start() {
-        requestAnimFrame(this.loop);
+        requestAnimFrame(this.tick);
     }
 
-    loop(currentTimestamp) {
-        const timeDelta = currentTimestamp - this.previousTimestamp;
-        this.previousTimestamp = currentTimestamp;
-        this.timeSinceLastStep += timeDelta;
+    tick(currentTimestamp) {
+        const timeDelta = currentTimestamp - this.lastTime;
+        this.lastTime = currentTimestamp;
+        this.accumulator += timeDelta;
 
         // Update/draw only if enough time has passed
-        if (this.timeSinceLastStep > this.timeStep) {
-            this.timeSinceLastStep = 0;
-            this.effect.update();
-            this.effect.draw();
+        if (this.accumulator > this.timeStep) {
+            this.accumulator = 0;
+            this.scene.update();
+            this.scene.draw();
         }
 
-        requestAnimFrame(this.loop);
+        requestAnimFrame(this.tick);
     }
 }
 
 // ---------------------------------------------------------------------------
+// HELPER
+// Static utility methods shared across the codebase.
+// ---------------------------------------------------------------------------
 
-// Helper functions.
 class Helper {
     static random(start, finish) {
         return Math.floor(Math.random() * (finish - start + 1)) + start;
@@ -264,7 +279,9 @@ class Helper {
     }
 }
 
-// Initialise the fireworks system when the window loads.
+// ---------------------------------------------------------------------------
+
+// Initialise the fireworks scene when the window loads.
 window.addEventListener('load', () => {
     const canvas = document.getElementById(CONFIG.CANVAS_ID);
     if (!canvas) {
@@ -273,8 +290,8 @@ window.addEventListener('load', () => {
     }
 
     const ctx = canvas.getContext('2d');
-    const fireworksSystem = new FireworksSystem(ctx, canvas);
-    new AnimationRunner(fireworksSystem, CONFIG.TIME_STEP).start();
+    const scene = new FireworksScene(ctx, canvas);
+    new Loop(scene, CONFIG.TIME_STEP).start();
 });
 
 // Polyfill for cross browser requestAnimationFrame support.
