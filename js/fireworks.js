@@ -1,7 +1,6 @@
 // Enable strict mode for cleaner, safer JavaScript.
 'use strict';
 
-
 // Centralised immutable object to make config changes a little easier.
 const CONFIG = Object.freeze({
     CANVAS_ID: 'canvas-fireworks',
@@ -21,7 +20,7 @@ const CONFIG = Object.freeze({
         LIFE_RANGE: [40, 70]      // Lifespan of rising particles
     },
     COLOURS: {
-        BACKGROUND: 'rgba(0,0,0,0.1)' // The alpha is used here to control the fade speed of particles
+        BACKGROUND: 'rgba(0, 0, 0, 0.1)' // The alpha is used here to control the fade speed of particles
     }
 });
 
@@ -236,6 +235,7 @@ class AnimationRunner {
         this.previousTimestamp = currentTimestamp;
         this.timeSinceLastStep += timeDelta;
 
+        // Update/draw only if enough time has passed
         if (this.timeSinceLastStep > this.timeStep) {
             this.timeSinceLastStep = 0;
             this.effect.update();
@@ -264,7 +264,7 @@ class Helper {
     }
 }
 
-//  Initialise the fireworks system when the window loads.
+// Initialise the fireworks system when the window loads.
 window.addEventListener('load', () => {
     const canvas = document.getElementById(CONFIG.CANVAS_ID);
     if (!canvas) {
