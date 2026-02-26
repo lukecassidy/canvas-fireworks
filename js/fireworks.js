@@ -273,8 +273,9 @@ class Loop {
 // ---------------------------------------------------------------------------
 
 class Helper {
-    static random(start, finish) {
-        return Math.floor(Math.random() * (finish - start + 1)) + start;
+    // Random integer between min and max (inclusive).
+    static random(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
     // Random hex colour.
