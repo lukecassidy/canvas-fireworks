@@ -240,7 +240,12 @@ class Loop {
     }
 
     start() {
-        requestAnimFrame(this.tick);
+        this.rafId = requestAnimFrame(this.tick);
+    }
+
+    // Not used in this project — call to halt the animation loop.
+    stop() {
+        cancelAnimationFrame(this.rafId);
     }
 
     tick(currentTimestamp) {
@@ -255,7 +260,7 @@ class Loop {
             this.scene.draw();
         }
 
-        requestAnimFrame(this.tick);
+        this.rafId = requestAnimFrame(this.tick);
     }
 }
 
