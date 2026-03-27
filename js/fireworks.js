@@ -36,7 +36,7 @@ const CONFIG = Object.freeze({
 // ---------------------------------------------------------------------------
 
 class Particle {
-    constructor(x, y, velX, velY, accX, accY, lifeSpan, colour, ctx, canvas) {
+    constructor(x, y, velocityX, velocityY, accelerationX, accelerationY, lifeSpan, colour, ctx, canvas) {
         this.ctx = ctx;
         this.canvas = canvas;
 
@@ -44,21 +44,21 @@ class Particle {
         this.height = 3;
         this.isDead = false;
 
-        this.posX = x;
-        this.posY = y;
-        this.velX = velX;
-        this.velY = velY;
-        this.accX = accX;
-        this.accY = accY;
+        this.positionX = x;
+        this.positionY = y;
+        this.velocityX = velocityX;
+        this.velocityY = velocityY;
+        this.accelerationX = accelerationX;
+        this.accelerationY = accelerationY;
         this.colour = colour;
         this.lifeSpan = lifeSpan;
     }
 
     update() {
-        this.velX += this.accX;
-        this.velY += this.accY;
-        this.posX += this.velX;
-        this.posY += this.velY;
+        this.velocityX += this.accelerationX;
+        this.velocityY += this.accelerationY;
+        this.positionX += this.velocityX;
+        this.positionY += this.velocityY;
 
         // Tick down the lifespan — mark as dead when it runs out.
         this.lifeSpan--;
@@ -67,9 +67,9 @@ class Particle {
         }
 
         // Also mark as dead if it's drifted off screen.
-        if (this.posY > this.canvas.height + CONFIG.SCREEN_BUFFER ||
-            this.posX < -CONFIG.SCREEN_BUFFER ||
-            this.posX > this.canvas.width + CONFIG.SCREEN_BUFFER
+        if (this.positionY > this.canvas.height + CONFIG.SCREEN_BUFFER ||
+            this.positionX < -CONFIG.SCREEN_BUFFER ||
+            this.positionX > this.canvas.width + CONFIG.SCREEN_BUFFER
         ) {
             this.isDead = true;
         }
@@ -77,7 +77,7 @@ class Particle {
 
     draw() {
         this.ctx.fillStyle = this.colour;
-        this.ctx.fillRect(this.posX, this.posY, this.width, this.height);
+        this.ctx.fillRect(this.positionX, this.positionY, this.width, this.height);
     }
 }
 
@@ -103,10 +103,10 @@ class Explosion {
         // Fan particles out in a circle.
         for (let i = this.maxParticles; i--;) {
             const angle = (i * Math.PI * 2) / this.maxParticles;
-            const velX = Math.sin(angle);
-            const velY = Math.cos(angle);
-            const accX = 0;
-            const accY = CONFIG.EXPLOSION.GRAVITY;
+            const velocityX = Math.sin(angle);
+            const velocityY = Math.cos(angle);
+            const accelerationX = 0;
+            const accelerationY = CONFIG.EXPLOSION.GRAVITY;
             const lifeSpan = Helper.random(this.lifeSpan, this.lifeSpan + 30);
             // Every third particle gets a random colour for a bit of variety.
             const colour = i % 3 ? this.primaryColour : Helper.getRandomColour();
@@ -115,10 +115,10 @@ class Explosion {
                 new Particle(
                     this.x,
                     this.y,
-                    velX,
-                    velY,
-                    accX,
-                    accY,
+                    velocityX,
+                    velocityY,
+                    accelerationX,
+                    accelerationY,
                     lifeSpan,
                     colour,
                     this.ctx,
@@ -192,8 +192,8 @@ class FireworksScene {
             if (this.particles[i].isDead) {
                 this.explosions.push(
                     new Explosion(
-                        this.particles[i].posX,
-                        this.particles[i].posY,
+                        this.particles[i].positionX,
+                        this.particles[i].positionY,
                         this.particles[i].colour,
                         this.ctx,
                         this.canvas
@@ -243,12 +243,12 @@ class Loop {
     }
 
     start() {
-        this.rafId = requestAnimFrame(this.tick);
+        this.frameId = requestAnimFrame(this.tick);
     }
 
     // Not used here — call this if you ever need to halt the loop.
     stop() {
-        cancelAnimationFrame(this.rafId);
+        cancelAnimationFrame(this.frameId);
     }
 
     tick(currentTimestamp) {
@@ -263,7 +263,7 @@ class Loop {
             this.scene.draw();
         }
 
-        this.rafId = requestAnimFrame(this.tick);
+        this.frameId = requestAnimFrame(this.tick);
     }
 }
 
@@ -300,6 +300,11 @@ window.addEventListener('load', () => {
     }
 
     const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Failed to get 2D rendering context.');
+        return;
+    }
+
     const scene = new FireworksScene(ctx, canvas);
     new Loop(scene, CONFIG.TIME_STEP).start();
 });
